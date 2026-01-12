@@ -5,3 +5,44 @@ date: "January 7, 2026"
 format: html
 ---
 
+```{r}
+library(tidyverse)
+library(janitor)
+library(here)
+library(stringr)
+```
+
+```{r}
+bees <- read_csv(here("week1", "data", "stressor.csv"))
+```
+
+```{r}
+bees_clean <- bees %>% 
+  mutate(state = str_remove_all(state, "[!@#$%^&*().+-/_]")) %>% 
+  mutate(stressor = str_remove_all(stressor, "[!@#$%^&*().+-/_]")) %>% 
+  clean_names() %>% 
+    pivot_longer(col = january_march:october_december,
+                 names_to = "months",
+                 values_to = "colonies") %>% 
+  mutate(quarter = case_when(
+    (months == "january_march") ~ 1,
+    (months == "april_june") ~ 2,
+    (months == "july_september") ~ 3,
+    (months == "october_december") ~ 4)) %>% 
+  filter(!(state %in% c("United States", "Other States"))) %>% 
+  filter(state == "Kentucky" & stressor == "Varroa mites") %>% 
+  group_by(year, quarter) %>% 
+  summarise(average = mean(colonies))
+```
+
+```{r}
+ggplot(bees_clean, aes(x = year, y = average, color = as.factor(quarter))) +
+  geom_jitter() +
+  scale_color_manual(values = c("gold", "darkorange", "hotpink", "firebrick")) +
+  labs(x = "Year",
+       y = "Average Number of Honey Bee Colonies",
+       caption = "Average Number of Honey Bee Colonies in Kentucky Influenced by Verrosa Mites",
+       color = "Quarter") +
+    theme_minimal() 
+```
+
