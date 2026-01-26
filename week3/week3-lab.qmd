@@ -1,0 +1,96 @@
+---
+title: "week3-lab"
+format: html
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                                    setup                                 ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+#..........................load packages.........................
+library(tidyverse)
+
+#..........................import data...........................
+drought <- read_csv(here::here("week3", "data", "drought.csv"))
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##                            wrangle drought data                          ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+drought_clean <- drought %>% 
+  
+  # Pivot table to be in tidy form
+  pivot_longer(cols = None:D4, names_to = "drought_lvl", 
+               values_to = "area_pct") %>%
+  
+  janitor::clean_names() %>%
+  
+  # Rename state abbreviation column
+   rename(state_abb = state_abbreviation) %>%
+
+  # select cols of interest & update names for clarity (as needed) ----
+  select(date = valid_start, state_abb, drought_lvl, area_pct) %>% 
+
+  # add year, month & day cols using {lubridate} fxns ----
+  # NOTE: this step isn't necessary for our plot, but 
+  # I'm including as examples of how to extract different date 
+  # elements from a object of class `Date` using {lubridate} ----
+  mutate(year = year(date),
+         month = month(date, label = TRUE, abbr = TRUE),
+         day = day(date)) %>%
+
+  # add drought level conditions names ----
+  mutate(drought_lvl_long = factor(drought_lvl,
+                            levels = c("D4", "D3", "D2", "D1", "D0", "None"),
+                            labels = c("(D4) Exceptional", "(D3) Extreme",
+                                       "(D2) Severe", "(D1) Moderate", 
+                                       "(D0) Abnormally Dry", 
+                                       "No Drought"))) %>%
+  
+  # reorder cols ----
+  relocate(date, year, month, day, state_abb, drought_lvl, drought_lvl_long, area_pct)
+```
+
+```{r}
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+##       create stacked area plot of CA drought conditions through time     ----
+##~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+drought_clean %>%  
+  
+  # remove drought_lvl "None" & filter for just CA ----
+  filter(drought_lvl != "None",
+         state_abb == "CA") %>% 
+  mutate(drought_lvl_long = fct_relevel(drought_lvl_long, 
+                                        c("(D0) Abnormally Dry", 
+                                          "(D1) Moderate", 
+                                          "(D2) Severe", 
+                                          "(D3) Extreme", 
+                                          "(D4) Exceptional"))) %>% 
+
+  
+# Pipe into ggplot here!
+ggplot(mapping = aes(x = date, y = area_pct, group = drought_lvl_long, fill = drought_lvl_long)) +
+  geom_area() +
+  scale_fill_manual(values = c("#FDFE00", "#FCE594", "#F6830C", "#F30000", "#7F3B00"))+
+  labs(x = "",
+       y = "",
+       title = "Drought area in California") +
+  scale_x_date(date_breaks = "2 years", date_labels = "%Y", 
+               limits = as.Date(c("2000-01-01", "2026-12-31")), 
+               expand = c(0, 0)) +
+  scale_y_continuous(expand = c(0, 0),
+                     breaks = seq(from = 0, to = 100, by = 10),
+                     labels = scales::label_percent(scale = 1)) +
+  guides(fill = guide_legend(reverse = TRUE)) +
+  theme_minimal() +
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        axis.line = element_line()) +
+  coord_cartesian(clip = 'off') +
+  coord_fixed(ratio = 50)
+```
+
