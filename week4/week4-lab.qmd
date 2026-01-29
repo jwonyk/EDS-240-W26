@@ -1,0 +1,75 @@
+---
+title: "week4-lab"
+format: html
+---
+```{r}
+library(tidyverse)
+library(here)
+library(ggplot2)
+library(ggdark)
+library(janitor)
+library(patchwork)
+```
+
+```{r}
+data <- read_csv(here("week4", "data", "data.csv"), skip = 4) %>% 
+  clean_names()
+```
+
+```{r}
+p1 <- ggplot(data, aes(x = date, y = value)) +
+  geom_area(data, mapping = aes(x = date, y = value), fill = "white", alpha = 0.9) +
+  geom_area(fill = "lightblue", alpha = 0.9) +
+  scale_y_continuous(limit = c(0, 25)) +
+  labs(title = "Snow Cover in North America and Greenland",
+       x = "Cover (million km^2)",
+       y = "Year") +
+  theme(panel.background = element_rect(fill = "grey4"),
+        plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(data = data, aes(x = date, y = value)) +
+  geom_bar(stat = "identity", fill = alpha("yellow")) +
+  ylim(-10, 30) +
+  coord_polar(start = 0) +
+  theme(panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        legend.background = element_rect(fill = "transparent", color = NA),
+        legend.box.background = element_rect(fill = "transparent")) +
+  theme_void()
+
+p1 + inset_element(p2, left = 0.5, bottom = 0.4, right = 0.95, top = 1.3)
+```
+
+```{r}
+
+font_add_google("Dancing Script", family = "cursive_font")
+showtext_auto()
+
+p1 <- ggplot(data = data, aes(x = date, y = value)) +
+  geom_area(data, mapping = aes(x = date, y = value), fill = "white", alpha = 0.9) +
+  geom_area(fill = "lightblue", alpha = 0.9) +
+  scale_y_continuous(limits = c(0, 25))+
+  theme(panel.background = element_rect(fill = "grey4"),
+        plot.title = element_text(family = "MonsieurLaDoulaise", 
+                                  size = 20, face = "bold",
+                                  hjust = 0.5)) +
+  labs(title = "Snow Cover in North America and Greenland",
+       x = "cover (million km^2)", y = "Year") +
+  geom_label(aes(x = 1985, y = 23), 
+             label = "Snowy Peaks and Valleys of Cover Anomaly",
+             family = "cursive_font",
+             size = 10)
+
+p2 <- ggplot(data = data, aes(x = date, y = value))+
+  geom_bar(stat = "identity", fill = alpha("yellow"))+
+  coord_polar(start = 0)+
+  ylim(0, 60)+
+  theme(panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        legend.background = element_rect(fill = "transparent"),
+        legend.box.background = element_rect(fill = "transparent")) +
+  theme_void()
+
+p1 + inset_element(p2, left = 0.5, bottom = 0.4, right = 1, top = 1.3)
+```
+
